@@ -2,8 +2,8 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "vmIPPublicDnsName": {
-      "value": "DevAgent"
+    "vmIPPublicDnsNamePrefix": {
+      "value": "MehodgeDevAgent"
     },
     "vmName": {
       "value": "DevAgent-VM1"
@@ -15,16 +15,16 @@
       "value": "weHU3878!!??"
     },
     "vstsAccount": {
-      "value": "mehodgeadmin"
+      "value": "mehodge"
     },
-    //"personalAccessToken": {
-    //  "value": "jdbdvrsmyereh7y34yweg2ujlgzjy5rp3l6wmzlai4p42xundk6a"
-    //},
+    "personalAccessToken": {
+      "value": "jdbdvrsmyereh7y34yweg2ujlgzjy5rp3l6wmzlai4p42xundk6a"
+    },
     "poolName": {
       "value": "Self Hosted Pool"
+    },
+    "enableAutologon": {
+      "value": false
     }
-    //"enableAutologon": {
-    //  "value": false
-    //}
   }
 }
