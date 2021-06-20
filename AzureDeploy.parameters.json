@@ -17,14 +17,14 @@
     "vstsAccount": {
       "value": "mehodgeadmin"
     },
-    "personalAccessToken": {
-      "value": "jdbdvrsmyereh7y34yweg2ujlgzjy5rp3l6wmzlai4p42xundk6a"
-    },
+    //"personalAccessToken": {
+    //  "value": "jdbdvrsmyereh7y34yweg2ujlgzjy5rp3l6wmzlai4p42xundk6a"
+    //},
     "poolName": {
       "value": "Self Hosted Pool"
-    },
-    "enableAutologon": {
-      "value": false
     }
+    //"enableAutologon": {
+    //  "value": false
+    //}
   }
 }
