@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmIPPublicDnsName": {
-      "value": "MehodgeDevAgent"
+      "value": "mehodgedevagent"
     },
     "vmName": {
       "value": "DevAgent-VM1"
