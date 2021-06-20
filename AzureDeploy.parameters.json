@@ -3,25 +3,25 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "vmIPPublicDnsName": {
-      "value": "GEN-UNIQUE"
+      "value": "DevAgent"
     },
     "vmName": {
-      "value": "GEN-UNIQUE-10"
+      "value": "DevAgent-VM1"
     },
     "vmAdminUserName": {
-      "value": "GEN-UNIQUE-10"
+      "value": "mehodgeadmin"
     },
     "vmAdminPassword": {
-      "value": "GEN-PASSWORD"
+      "value": "weHU3878!!??"
     },
     "vstsAccount": {
-      "value": "GEN-UNIQUE"
+      "value": "mehodgeadmin"
     },
     "personalAccessToken": {
-      "value": "GEN-PASSWORD"
+      "value": "jdbdvrsmyereh7y34yweg2ujlgzjy5rp3l6wmzlai4p42xundk6a"
     },
     "poolName": {
-      "value": "GEN-UNIQUE"
+      "value": "Self Hosted Pool"
     },
     "enableAutologon": {
       "value": false

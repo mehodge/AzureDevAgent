@@ -1,24 +1,7 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-  "contentVersion": "1.0.0.0",
+  "contentVersion": "1.0.0.2",
   "parameters": {
-    "storageType": {
-      "type": "string",
-      "defaultValue": "Premium_LRS",
-      "allowedValues": [
-        "Premium_LRS",
-        "Standard_LRS"
-      ],
-      "metadata": {
-        "description": "Which type of storage you want to use"
-      }
-    },
-    "vmName": {
-      "type": "string",
-      "metadata": {
-        "description": "Local name for the VM can be whatever you want"
-      }
-    },
     "vmAdminUserName": {
       "type": "string",
       "metadata": {
@@ -30,13 +13,6 @@
       "metadata": {
         "description": "VM admin password. The supplied password must be between 8-123 characters long and must satisfy at least 3 of password complexity requirements from the following: 1) Contains an uppercase character 2) Contains a lowercase character 3) Contains a numeric digit 4) Contains a special character."
       }
-    },
-    "vmSize": {
-      "type": "string",
-      "metadata": {
-        "description": "Desired Size of the VM. Any valid option accepted but if you choose premium storage type you must choose a DS class VM size."
-      },
-      "defaultValue": "Standard_D2_v2"
     },
     "vmVisualStudioVersion": {
       "type": "string",
@@ -57,51 +33,11 @@
         "description": "Which version of Visual Studio you would like to deploy"
       }
     },
-    "vmIPPublicDnsName": {
+    "vmIPPublicDnsNamePrefix": {
       "type": "string",
       "metadata": {
-        "description": "Globally unique name for per region for the public IP address. For instance, myVMuniqueIP.westus.cloudapp.azure.com. It must conform to the following regular expression: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$."
+        "description": "Globally unique naming prefix for per region for the public IP address. For instance, myVMuniqueIP.westus.cloudapp.azure.com. It must conform to the following regular expression: ^[a-z][a-z0-9-]{1,61}[a-z0-9]$."
       }
-    },
-    "vstsAccount": {
-      "type": "string",
-      "metadata": {
-        "description": "The Visual Studio Team Services account name, that is, the first part of your VSTSAccount.visualstudio.com"
-      }
-    },
-    "personalAccessToken": {
-      "type": "securestring",
-      "metadata": {
-        "description": "The personal access token to connect to VSTS"
-      }
-    },
-    "poolName": {
-      "type": "string",
-      "defaultValue": "Default",
-      "metadata": {
-        "description": "The Visual Studio Team Services build agent pool for this build agent to join. Use 'Default' if you don't have a separate pool."
-      }
-    },
-    "enableAutologon": {
-      "type": "bool",
-      "defaultValue": false,
-      "metadata": {
-        "description": "Enable autologon to run the build agent in interactive mode that can sustain machine reboots.<br>Set this to true if the agents will be used to run UI tests."
-      }
-    },
-    "_artifactsLocation": {
-      "type": "string",
-      "metadata": {
-        "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
-      },
-      "defaultValue": "https://raw.githubusercontent.com/azure/azure-quickstart-templates/master/visual-studio-vstsbuildagent-vm/"
-    },
-    "_artifactsLocationSasToken": {
-      "type": "securestring",
-      "metadata": {
-        "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
-      },
-      "defaultValue": ""
     },
     "location": {
       "type": "string",
@@ -109,43 +45,63 @@
       "metadata": {
         "description": "Location for all resources."
       }
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2s_v3",
+      "metadata": {
+        "description": "VM Size"
+      }
     }
   },
   "variables": {
-    "storageAccountName": "[concat(uniquestring(resourceGroup().id),'storage')]",
-    "vnet01Prefix": "10.0.0.0/16",
-    "vnet01Subnet1Name": "Subnet-1",
-    "vnet01Subnet1Prefix": "10.0.0.0/24",
+    "vmName": "[concat(substring(parameters('vmVisualStudioVersion'),0,8), 'vm')]",
+    "vnet01Prefix": "100.100.0.0/16",
+    "vnet01Subnet1Name": "DevAgentSubnet",
+    "vnetName": "DevAgent-vNet",
+    "vnet01Subnet1Prefix": "100.100.1.0/24",
     "vmImagePublisher": "MicrosoftVisualStudio",
     "vmImageOffer": "VisualStudio",
-    "vmSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', 'Vnet01', variables('vnet01Subnet1Name'))]",
-    "vmNicName": "[concat(parameters('vmName'), 'NetworkInterface')]",
-    "vmIP01Name": "VMIP01",
-    "vstsAgentName": "[concat('agent-', parameters('vmName'))]",
-    "vstsParameters": "[concat('-vstsAccount ', parameters('vstsAccount'), ' -personalAccessToken ', parameters('personalAccessToken'), ' -AgentName ', variables('vstsAgentName'),' -PoolName ', parameters('poolName'), ' -runAsAutoLogon ', parameters('enableAutologon'), ' -vmAdminUserName ', parameters('vmAdminUsername'), ' -vmAdminPassword ', parameters('vmAdminPassword'))]"
+    "vmSubnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vnetName'), variables('Vnet01Subnet1Name'))]",
+    "vmNicName": "[concat(variables('vmName'), '-nic')]",
+    "vmIP01Name": "DevAgent-PIP",
+    "networkSecurityGroupName": "[concat(variables('vnet01Subnet1Name'), '-nsg')]"
   },
   "resources": [
     {
-      "name": "[variables('storageAccountName')]",
-      "type": "Microsoft.Storage/storageAccounts",
+      "comments": "Simple Network Security Group for subnet [variables('vnet01Subnet1Name')]",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2019-08-01",
+      "name": "[variables('networkSecurityGroupName')]",
       "location": "[parameters('location')]",
-      "apiVersion": "2015-05-01-preview",
-      "dependsOn": [],
-      "tags": {
-        "displayName": "Storage01"
-      },
       "properties": {
-        "accountType": "[parameters('storageType')]"
+        "securityRules": [
+          {
+            "name": "default-allow-3389",
+            "properties": {
+              "priority": 1000,
+              "access": "Allow",
+              "direction": "Inbound",
+              "destinationPortRange": "3389",
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*"
+            }
+          }
+        ]
       }
     },
     {
-      "name": "VNet01",
+      "name": "[variables('vnetName')]",
       "type": "Microsoft.Network/virtualNetworks",
       "location": "[parameters('location')]",
-      "apiVersion": "2015-05-01-preview",
-      "dependsOn": [],
+      "apiVersion": "2019-11-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+      ],
       "tags": {
-        "displayName": "Vnet01"
+        "displayName": "VNet01"
       },
       "properties": {
         "addressSpace": {
@@ -157,7 +113,10 @@
           {
             "name": "[variables('vnet01Subnet1Name')]",
             "properties": {
-              "addressPrefix": "[variables('vnet01Subnet1Prefix')]"
+              "addressPrefix": "[variables('vnet01Subnet1Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('networkSecurityGroupName'))]"
+              }
             }
           }
         ]
@@ -167,10 +126,10 @@
       "name": "[variables('vmNicName')]",
       "type": "Microsoft.Network/networkInterfaces",
       "location": "[parameters('location')]",
-      "apiVersion": "2015-05-01-preview",
+      "apiVersion": "2020-03-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks/', 'Vnet01')]",
-        "[resourceId('Microsoft.Network/publicIPAddresses/', variables('vmIP01Name'))]"
+        "[variables('vnetName')]",
+        "[variables('vmIP01Name')]"
       ],
       "tags": {
         "displayName": "VMNic01"
@@ -193,13 +152,12 @@
       }
     },
     {
-      "name": "[parameters('vmName')]",
+      "name": "[variables('vmName')]",
       "type": "Microsoft.Compute/virtualMachines",
       "location": "[parameters('location')]",
-      "apiVersion": "2017-03-30",
+      "apiVersion": "2019-12-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
-        "[resourceId('Microsoft.Network/networkInterfaces/', variables('vmNicName'))]"
+        "[variables('vmNicName')]"
       ],
       "tags": {
         "displayName": "VM01"
@@ -209,8 +167,8 @@
           "vmSize": "[parameters('vmSize')]"
         },
         "osProfile": {
-          "computerName": "[parameters('vmName')]",
-          "adminUsername": "[parameters('vmAdminUserName')]",
+          "computerName": "[variables('vmName')]",
+          "adminUsername": "[parameters('vmAdminUsername')]",
           "adminPassword": "[parameters('vmAdminPassword')]"
         },
         "storageProfile": {
@@ -221,9 +179,11 @@
             "version": "latest"
           },
           "osDisk": {
-            "name": "[concat(parameters('vmName'),'_OSDisk')]",
             "caching": "ReadWrite",
-            "createOption": "FromImage"
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "StandardSSD_LRS"
+            }
           }
         },
         "networkProfile": {
@@ -235,44 +195,28 @@
         }
       },
       "resources": [
-        {
-          "name": "CustomScript",
-          "type": "extensions",
-          "location": "[parameters('location')]",
-          "apiVersion": "2017-03-30",
-          "dependsOn": [
-            "[resourceId('Microsoft.Compute/virtualMachines/', parameters('vmName'))]"
-          ],
-          "properties": {
-            "publisher": "Microsoft.Compute",
-            "type": "CustomScriptExtension",
-            "typeHandlerVersion": "1.4",
-            "settings": {
-              "fileUris": [
-                "[uri(parameters('_artifactsLocation'), concat('InstallVSTSAgent.ps1', parameters('_artifactsLocationSasToken')))]"
-              ],
-              "commandToExecute": "[concat('powershell.exe -ExecutionPolicy Unrestricted -Command \"& {', './', 'InstallVstsAgent.ps1', ' ', variables('vstsParameters'), '}\"')]"
-            }
-          }
-        }
       ]
     },
     {
       "name": "[variables('vmIP01Name')]",
       "type": "Microsoft.Network/publicIPAddresses",
       "location": "[parameters('location')]",
-      "apiVersion": "2015-05-01-preview",
-      "dependsOn": [],
+      "apiVersion": "2020-03-01",
       "tags": {
         "displayName": "VMIP01"
       },
       "properties": {
         "publicIPAllocationMethod": "Dynamic",
         "dnsSettings": {
-          "domainNameLabel": "[parameters('vmIPPublicDnsName')]"
+          "domainNameLabel": "[parameters('vmIPPublicDnsNamePrefix')]"
         }
       }
     }
   ],
-  "outputs": {}
+  "outputs": {
+    "vm-fqdn": {
+      "type": "string",
+      "value": "[reference(variables('vmIP01Name')).dnsSettings.fqdn]"
+    }
+  }
 }
